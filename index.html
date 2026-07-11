@@ -228,16 +228,37 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
       "Unit Bisnis","Tanggal",
       "Jam","Bulan"
     ]);
+    // Paksa kolom D:F selalu jadi TEKS,
+    // supaya Sheets tidak otomatis
+    // mengubahnya jadi tipe Date/Time
+    sheet.getRange("D2:F2000")
+      .setNumberFormat("@");
+  }
+
+  // Jaga-jaga: baca 1 sel apa saja untuk
+  // memastikan formatnya teks juga
+  function toText(v){
+    if (Object.prototype.toString
+        .call(v) === "[object Date]") {
+      return Utilities.formatDate(
+        v, Session.getScriptTimeZone(),
+        "yyyy-MM-dd HH:mm"
+      );
+    }
+    return v;
   }
 
   if (e.parameter.action === "read") {
-    var rows = sheet.getDataRange().getValues();
+    var rows = sheet.getDataRange()
+                 .getValues();
     rows.shift();
     var data = rows.map(function(r){
       return {
         name:r[0], code:r[1],
-        outlet:r[2], date:r[3],
-        time:r[4], month:r[5]
+        outlet:r[2],
+        date:toText(r[3]),
+        time:toText(r[4]),
+        month:toText(r[5])
       };
     });
     var payload = JSON.stringify(
@@ -260,6 +281,9 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
       );
   }
 
+  sheet.getRange(
+    sheet.getLastRow()+1, 4, 1, 3
+  ).setNumberFormat("@");
   sheet.appendRow([
     e.parameter.name   || "",
     e.parameter.code   || "",
