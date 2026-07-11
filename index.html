@@ -322,10 +322,12 @@ const MN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des
 let selectedOutlet=null,barChart=null,activeFilter='Semua';
 let allData=[];
 let pendingLocal=[]; // entries submitted locally, not yet confirmed back from Sheets
+try{pendingLocal=JSON.parse(localStorage.getItem('kip_pending_v1')||'[]')}catch(e){}
 let syncTimer=null,isSyncing=false;
 try{allData=JSON.parse(localStorage.getItem('kip_data_cache_v2')||'[]')}catch(e){}
 
 function cacheData(){try{localStorage.setItem('kip_data_cache_v2',JSON.stringify(allData))}catch(e){}}
+function cachePending(){try{localStorage.setItem('kip_pending_v1',JSON.stringify(pendingLocal))}catch(e){}}
 function getGsUrl(){return localStorage.getItem('kip_gs_url')||''}
 function saveGsUrl(){
   const v=document.getElementById('gsUrl').value.trim();
@@ -395,6 +397,7 @@ async function fetchCloud(manual){
       allData=json.data.map(d=>({...d,ts:0}));
       // keep very recent local submissions that may not have landed in Sheets yet (race window)
       pendingLocal=pendingLocal.filter(p=>!allData.some(d=>d.code===p.code&&d.date===p.date&&d.time===p.time&&d.outlet===p.outlet));
+      cachePending();
       allData=allData.concat(pendingLocal);
       cacheData();
       refreshCurrentView();
@@ -479,7 +482,7 @@ function submitCode(){
     date:now.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}),
     time:fmtTime(Date.now())};
   // optimistic local update so this device sees it instantly
-  allData.push(entry);pendingLocal.push(entry);cacheData();
+  allData.push(entry);pendingLocal.push(entry);cacheData();cachePending();
   document.getElementById('codeInput').value='';
   document.getElementById('hint').textContent='';document.getElementById('hint').className='hint';
   document.getElementById('submitBtn').disabled=true;
