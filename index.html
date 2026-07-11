@@ -281,16 +281,13 @@ html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe
       );
   }
 
-  sheet.getRange(
-    sheet.getLastRow()+1, 4, 1, 3
-  ).setNumberFormat("@");
   sheet.appendRow([
     e.parameter.name   || "",
     e.parameter.code   || "",
     e.parameter.outlet || "",
-    e.parameter.date   || "",
-    e.parameter.time   || "",
-    e.parameter.month  || ""
+    "'" + (e.parameter.date  || ""),
+    "'" + (e.parameter.time  || ""),
+    "'" + (e.parameter.month || "")
   ]);
   return ContentService
     .createTextOutput(
