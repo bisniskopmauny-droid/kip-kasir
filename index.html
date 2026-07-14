@@ -358,51 +358,17 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
         <div class="gs-step"><span>1</span>Buka Apps Script → hapus semua kode lama → tempel kode ini:</div>
         <div class="code-block"><pre>function doGet(e) {
   var ss = SpreadsheetApp
-             .getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(
-                "Data KIP");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      "Nama Talent","Kode",
-      "Unit Bisnis","Tanggal",
-      "Jam","Bulan"
-    ]);
-    sheet.getRange("D2:F2000")
-      .setNumberFormat("@");
-  }
-  function toText(v){
-    if (Object.prototype.toString
-        .call(v) === "[object Date]") {
-      return Utilities.formatDate(
-        v, Session.getScriptTimeZone(),
-        "yyyy-MM-dd HH:mm"
-      );
-    }
-    return v;
-  }
-  if (e.parameter.action === "read") {
-    var rows = sheet.getDataRange()
-                 .getValues();
-    rows.shift();
-    var data = rows.map(function(r){
-      return {
-        name:r[0], code:r[1],
-        outlet:r[2],
-        date:toText(r[3]),
-        time:toText(r[4]),
-        month:toText(r[5])
-      };
-    });
-    var payload = JSON.stringify(
-      {status:"ok", data:data}
-    );
-    if (e.parameter.callback) {
+    .getActiveSpreadsheet();
+  var p = e.parameter;
+
+  // ── helper: balas JSON / JSONP ──
+  function reply(obj) {
+    var payload = JSON.stringify(obj);
+    if (p.callback) {
       return ContentService
         .createTextOutput(
-          e.parameter.callback +
-          "(" + payload + ")"
-        )
-        .setMimeType(
+          p.callback+"("+payload+")"
+        ).setMimeType(
           ContentService.MimeType.JAVASCRIPT
         );
     }
@@ -412,21 +378,127 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
         ContentService.MimeType.JSON
       );
   }
-  sheet.appendRow([
-    e.parameter.name   || "",
-    e.parameter.code   || "",
-    e.parameter.outlet || "",
-    "'" + (e.parameter.date  || ""),
-    "'" + (e.parameter.time  || ""),
-    "'" + (e.parameter.month || "")
-  ]);
-  return ContentService
-    .createTextOutput(
-      JSON.stringify({status:"ok"})
-    )
-    .setMimeType(
-      ContentService.MimeType.JSON
+
+  // ── helper: konversi Date → teks ──
+  function toText(v) {
+    if (Object.prototype.toString
+        .call(v)==="[object Date]") {
+      return Utilities.formatDate(
+        v,Session.getScriptTimeZone(),
+        "yyyy-MM-dd HH:mm");
+    }
+    return v;
+  }
+
+  // ── sheet Data KIP ──────────────
+  var sheet = ss.getSheetByName("Data KIP");
+  if (!sheet) {
+    sheet = ss.insertSheet("Data KIP");
+  }
+  if (sheet.getLastRow()===0) {
+    sheet.appendRow([
+      "Nama Talent","Kode",
+      "Unit Bisnis","Tanggal",
+      "Jam","Bulan"]);
+    sheet.getRange("D2:F2000")
+      .setNumberFormat("@");
+  }
+
+  // ── sheet Talent KIP ────────────
+  var tsheet =
+    ss.getSheetByName("Talent KIP");
+  if (!tsheet) {
+    tsheet = ss.insertSheet("Talent KIP");
+    tsheet.appendRow(["Nama","Kode"]);
+  }
+
+  var action = p.action || "";
+
+  // ── BACA transaksi ──────────────
+  if (action==="read") {
+    var rows = sheet.getDataRange()
+      .getValues();
+    rows.shift();
+    var data = rows.map(function(r){
+      return {
+        name:r[0],code:r[1],
+        outlet:r[2],
+        date:toText(r[3]),
+        time:toText(r[4]),
+        month:toText(r[5])
+      };
+    });
+    return reply({status:"ok",data:data});
+  }
+
+  // ── BACA daftar talent ──────────
+  if (action==="read-talents") {
+    var tr = tsheet.getDataRange()
+      .getValues();
+    tr.shift(); // buang header
+    var talents = tr
+      .filter(function(r){
+        return r[0]&&r[1];
+      })
+      .map(function(r){
+        return {name:r[0],code:r[1]};
+      });
+    return reply(
+      {status:"ok",talents:talents}
     );
+  }
+
+  // ── TAMBAH talent ───────────────
+  if (action==="add-talent") {
+    tsheet.appendRow([
+      p.name||"", p.code||""
+    ]);
+    return reply({status:"ok"});
+  }
+
+  // ── EDIT talent (cari by kode) ──
+  if (action==="edit-talent") {
+    var trows = tsheet.getDataRange()
+      .getValues();
+    for (var i=1;i<trows.length;i++){
+      if (trows[i][1]===p.old_code){
+        tsheet.getRange(i+1,1)
+          .setValue(p.name||trows[i][0]);
+        tsheet.getRange(i+1,2)
+          .setValue(p.code||trows[i][1]);
+        return reply({status:"ok"});
+      }
+    }
+    return reply(
+      {status:"err",msg:"not found"}
+    );
+  }
+
+  // ── HAPUS talent (cari by kode) ─
+  if (action==="delete-talent") {
+    var drows = tsheet.getDataRange()
+      .getValues();
+    for (var j=1;j<drows.length;j++){
+      if (drows[j][1]===p.code){
+        tsheet.deleteRow(j+1);
+        return reply({status:"ok"});
+      }
+    }
+    return reply(
+      {status:"err",msg:"not found"}
+    );
+  }
+
+  // ── TULIS transaksi (default) ───
+  sheet.appendRow([
+    p.name   ||"",
+    p.code   ||"",
+    p.outlet ||"",
+    "'"+(p.date  ||""),
+    "'"+(p.time  ||""),
+    "'"+(p.month ||"")
+  ]);
+  return reply({status:"ok"});
 }</pre></div>
         <div class="gs-step"><span>2</span>Klik <code>Deploy → Manage deployments</code></div>
         <div class="gs-step"><span>3</span>Klik ikon pensil → <code>Version: New version</code> → <code>Deploy</code></div>
@@ -548,33 +620,91 @@ const DEFAULT_TALENTS = [
 ];
 
 // =====================================================================
-// TALENT STORE — persisted in localStorage, editable by management
+// TALENT STORE — Sheets sebagai master, realtime di semua device
 // =====================================================================
-let TALENTS = [];
-let talentAddedAt = {}; // code -> timestamp, untuk badge "Baru"
+let TALENTS = []; // selalu diisi dari Sheets, bukan localStorage
+let talentAddedAt = {}; // hanya untuk badge "Baru" — boleh lokal
+let isTalentSyncing = false;
 
-function loadTalents() {
-  try {
-    const raw = localStorage.getItem('kip_talents_v1');
-    if (raw) {
-      TALENTS = JSON.parse(raw);
-    } else {
-      TALENTS = DEFAULT_TALENTS.map(t => ({...t}));
-      saveTalents();
-    }
-  } catch(e) {
-    TALENTS = DEFAULT_TALENTS.map(t => ({...t}));
-  }
-  try {
-    talentAddedAt = JSON.parse(localStorage.getItem('kip_talent_added_v1') || '{}');
-  } catch(e) { talentAddedAt = {}; }
+try {
+  talentAddedAt = JSON.parse(localStorage.getItem('kip_talent_added_v1') || '{}');
+} catch(e) { talentAddedAt = {}; }
+
+function saveAddedAt() {
+  try { localStorage.setItem('kip_talent_added_v1', JSON.stringify(talentAddedAt)); } catch(e) {}
 }
 
-function saveTalents() {
+// Muat daftar talent dari Sheets
+async function loadTalents() {
+  const url = getGsUrl();
+  if (!url) {
+    // Belum ada URL → pakai default sementara supaya kasir bisa berjalan
+    if (!TALENTS.length) TALENTS = DEFAULT_TALENTS.map(t => ({...t}));
+    return;
+  }
   try {
-    localStorage.setItem('kip_talents_v1', JSON.stringify(TALENTS));
-    localStorage.setItem('kip_talent_added_v1', JSON.stringify(talentAddedAt));
-  } catch(e) {}
+    const json = await jsonpRequest(url + '?action=read-talents&t=' + Date.now(), 8000);
+    if (json.status === 'ok' && Array.isArray(json.talents)) {
+      if (json.talents.length > 0) {
+        TALENTS = json.talents;
+      } else {
+        // Sheet Talent KIP masih kosong → seed dengan default
+        if (!TALENTS.length) TALENTS = DEFAULT_TALENTS.map(t => ({...t}));
+        // Tulis default ke Sheets supaya semua device langsung punya
+        for (const t of TALENTS) {
+          await jsonpRequest(url + '?action=add-talent&name=' + encodeURIComponent(t.name) + '&code=' + encodeURIComponent(t.code), 6000).catch(()=>{});
+        }
+      }
+      renderTalentList();
+    }
+  } catch(e) {
+    // Fallback ke default jika Sheets tidak bisa diakses
+    if (!TALENTS.length) TALENTS = DEFAULT_TALENTS.map(t => ({...t}));
+  }
+}
+
+// Kirim tambah talent ke Sheets
+async function pushAddTalent(talent) {
+  const url = getGsUrl(); if (!url) return false;
+  try {
+    const json = await jsonpRequest(
+      url + '?action=add-talent&name=' + encodeURIComponent(talent.name) + '&code=' + encodeURIComponent(talent.code), 8000
+    );
+    return json.status === 'ok';
+  } catch(e) { return false; }
+}
+
+// Kirim edit talent ke Sheets
+async function pushEditTalent(oldCode, newName, newCode) {
+  const url = getGsUrl(); if (!url) return false;
+  try {
+    const json = await jsonpRequest(
+      url + '?action=edit-talent&old_code=' + encodeURIComponent(oldCode) +
+      '&name=' + encodeURIComponent(newName) + '&code=' + encodeURIComponent(newCode), 8000
+    );
+    return json.status === 'ok';
+  } catch(e) { return false; }
+}
+
+// Kirim hapus talent ke Sheets
+async function pushDeleteTalent(code) {
+  const url = getGsUrl(); if (!url) return false;
+  try {
+    const json = await jsonpRequest(
+      url + '?action=delete-talent&code=' + encodeURIComponent(code), 8000
+    );
+    return json.status === 'ok';
+  } catch(e) { return false; }
+}
+
+// Poll daftar talent dari Sheets tiap 10 detik (lebih jarang dari transaksi)
+let talentSyncTimer = null;
+function startTalentSync() {
+  loadTalents();
+  if (talentSyncTimer) clearInterval(talentSyncTimer);
+  talentSyncTimer = setInterval(() => {
+    if (!document.hidden) loadTalents();
+  }, 10000);
 }
 
 // =====================================================================
@@ -593,13 +723,11 @@ let pendingLocal = [];
 try { pendingLocal = JSON.parse(localStorage.getItem('kip_pending_v2') || '[]'); } catch(e) {}
 
 let syncTimer = null, isSyncing = false, lastSyncTs = 0;
-let sheetsReady = false; // true setelah koneksi Sheets pertama berhasil
+let sheetsReady = false;
 
 let editingCode = null;
 let deletingCode = null;
 let importBatch = [];
-
-loadTalents();
 
 // =====================================================================
 // PERSISTENCE — hanya untuk pending & URL, BUKAN data utama
@@ -1045,34 +1173,46 @@ function onNicknameInput() {
   }
 }
 
-function saveTalent() {
+async function saveTalent() {
   const name = document.getElementById('form-fullname').value.trim();
   const nick = document.getElementById('form-nickname').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!name || !nick) return;
   const code = 'KIP-' + nick;
 
+  const saveBtn = document.getElementById('btn-save-talent');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Menyimpan...';
+
   if (editingCode) {
-    // Edit existing
-    const idx = TALENTS.findIndex(t => t.code === editingCode);
-    if (idx === -1) return;
-    const oldCode = editingCode;
-    TALENTS[idx] = {code, name};
-    // Update talentAddedAt if code changed
-    if (oldCode !== code) {
-      if (talentAddedAt[oldCode]) { talentAddedAt[code] = talentAddedAt[oldCode]; delete talentAddedAt[oldCode]; }
+    const ok = await pushEditTalent(editingCode, name, code);
+    if (ok) {
+      // Update lokal optimistis
+      const idx = TALENTS.findIndex(t => t.code === editingCode);
+      if (idx !== -1) {
+        if (editingCode !== code) {
+          if (talentAddedAt[editingCode]) { talentAddedAt[code] = talentAddedAt[editingCode]; delete talentAddedAt[editingCode]; saveAddedAt(); }
+        }
+        TALENTS[idx] = {code, name};
+      }
+      showToast(`Talent ${name} diperbarui di Sheets!`);
+    } else {
+      showToast('Gagal update ke Sheets — cek koneksi', true);
     }
-    saveTalents();
-    showToast(`Talent ${name} diperbarui!`);
   } else {
-    // Add new
-    TALENTS.push({code, name});
-    talentAddedAt[code] = Date.now();
-    saveTalents();
-    showToast(`Talent ${name} (${code}) ditambahkan!`);
+    const ok = await pushAddTalent({name, code});
+    if (ok) {
+      TALENTS.push({code, name});
+      talentAddedAt[code] = Date.now(); saveAddedAt();
+      showToast(`Talent ${name} (${code}) ditambahkan ke Sheets!`);
+    } else {
+      showToast('Gagal tambah ke Sheets — cek koneksi', true);
+    }
   }
 
   closeModal('modal-talent');
   renderTalentList(document.getElementById('talentSearch')?.value || '');
+  // Tarik ulang dari Sheets untuk konfirmasi
+  setTimeout(() => loadTalents(), 1500);
 }
 
 // =====================================================================
@@ -1086,16 +1226,27 @@ function openDeleteModal(code) {
   openModal('modal-delete');
 }
 
-function confirmDelete() {
+async function confirmDelete() {
   if (!deletingCode) return;
   const t = TALENTS.find(t => t.code === deletingCode);
-  TALENTS = TALENTS.filter(t => t.code !== deletingCode);
-  delete talentAddedAt[deletingCode];
-  saveTalents();
+
+  const delBtn = document.querySelector('#modal-delete .btn-del');
+  if (delBtn) { delBtn.disabled = true; delBtn.textContent = 'Menghapus...'; }
+
+  const ok = await pushDeleteTalent(deletingCode);
+  if (ok) {
+    TALENTS = TALENTS.filter(t => t.code !== deletingCode);
+    delete talentAddedAt[deletingCode]; saveAddedAt();
+    showToast(`Talent ${t?.name || deletingCode} dihapus dari Sheets.`);
+  } else {
+    showToast('Gagal hapus dari Sheets — cek koneksi', true);
+  }
+
+  if (delBtn) { delBtn.disabled = false; delBtn.textContent = 'Hapus talent'; }
   closeModal('modal-delete');
-  showToast(`Talent ${t?.name || deletingCode} dihapus.`);
   deletingCode = null;
   renderTalentList(document.getElementById('talentSearch')?.value || '');
+  setTimeout(() => loadTalents(), 1500);
 }
 
 // =====================================================================
@@ -1194,16 +1345,35 @@ function parseImportCSV(text) {
   confirmBtn.disabled = false;
 }
 
-function importTalents() {
+async function importTalents() {
   if (!importBatch.length) return;
-  importBatch.forEach(t => {
-    TALENTS.push(t);
-    talentAddedAt[t.code] = Date.now();
-  });
-  saveTalents();
-  showToast(`${importBatch.length} talent berhasil diimport!`);
+  const confirmBtn = document.getElementById('btn-import-confirm');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = `Mengupload ${importBatch.length} talent...`;
+
+  let successCount = 0;
+  for (const t of importBatch) {
+    const ok = await pushAddTalent(t);
+    if (ok) {
+      TALENTS.push(t);
+      talentAddedAt[t.code] = Date.now();
+      successCount++;
+    }
+  }
+  saveAddedAt();
+
+  confirmBtn.disabled = false;
+  confirmBtn.textContent = 'Import talent';
+
+  if (successCount > 0) {
+    showToast(`${successCount} talent berhasil diimport ke Sheets!`);
+  } else {
+    showToast('Gagal import — cek koneksi Sheets', true);
+  }
+
   closeModal('modal-import');
   renderTalentList(document.getElementById('talentSearch')?.value || '');
+  setTimeout(() => loadTalents(), 2000);
 }
 
 // =====================================================================
@@ -1247,18 +1417,26 @@ function showToast(msg, err = false) {
 }
 
 // =====================================================================
-// INIT — Sheets adalah sumber data, tidak ada init dari localStorage
+// INIT — Sheets adalah sumber data untuk transaksi DAN daftar talent
 // =====================================================================
-renderRecent(); // tampilkan kosong dulu
+renderRecent();
 if (getGsUrl()) {
-  showOfflineBanner(true); // tampilkan banner sampai Sheets pertama berhasil
-  startSync();
+  showOfflineBanner(true);
+  startSync();        // polling transaksi tiap 5 detik
+  startTalentSync();  // polling daftar talent tiap 10 detik
 } else {
+  // Belum ada URL → pakai default talent sementara
+  TALENTS = DEFAULT_TALENTS.map(t => ({...t}));
   setSyncBadge('off', 'Belum tersinkron — atur URL di Pengaturan');
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { if (syncTimer) clearInterval(syncTimer); }
-  else if (getGsUrl()) { startSync(); }
+  if (document.hidden) {
+    if (syncTimer) clearInterval(syncTimer);
+    if (talentSyncTimer) clearInterval(talentSyncTimer);
+  } else if (getGsUrl()) {
+    startSync();
+    startTalentSync();
+  }
 });
 </script>
 </body>
