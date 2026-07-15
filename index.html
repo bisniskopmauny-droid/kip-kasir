@@ -247,7 +247,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
       </div>
       <div class="card">
         <div class="card-title"><i class="ti ti-ticket" aria-hidden="true"></i>Input kode referral talent</div>
-        <input class="code-input" id="codeInput" type="text" placeholder="Contoh: NAMA TALENT" maxlength="30"
+        <input class="code-input" id="codeInput" type="text" placeholder="Contoh: KIP-ALYA" maxlength="30"
           oninput="handleInput(this)" onkeydown="if(event.key==='Enter')submitCode()">
         <div class="hint" id="hint"></div>
         <button class="btn-green" id="submitBtn" onclick="submitCode()" disabled>
@@ -310,6 +310,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
       </button>
       <button class="btn-ghost" onclick="downloadCSV()"><i class="ti ti-file-spreadsheet" aria-hidden="true" style="margin-right:5px"></i>Unduh CSV</button>
       <button class="btn-danger" onclick="if(confirm('Ini hanya menghapus data dari layar perangkat ini sementara — data asli tetap ada di Google Sheets dan akan muncul lagi saat sinkron berikutnya. Untuk menghapus permanen, edit langsung di Sheets. Lanjutkan?'))resetData()">Sembunyikan data bulan ini (sementara)</button>
+      <button class="btn-danger" style="margin-top:6px;border-color:#B4B2A9;color:var(--text-secondary)" onclick="clearPendingCache()"><i class="ti ti-eraser" aria-hidden="true" style="margin-right:5px"></i>Bersihkan cache pending lokal</button>
       <div id="sheets-status" class="gs-status"></div>
     </div>
     <div class="card">
@@ -800,18 +801,25 @@ async function fetchCloud(manual) {
       // allData diisi 100% dari Sheets. Tidak ada data dari localStorage.
       const fromSheets = json.data.filter(d => d.name && d.code && d.outlet);
 
-      // Buang pending yang sudah terkonfirmasi ada di Sheets
-      pendingLocal = pendingLocal.filter(p =>
-        !fromSheets.some(d =>
+      // ── Buang pending yang sudah ada di Sheets ───────────────────────
+      // Cocokkan hanya code + outlet + date (bukan time persis)
+      // supaya perbedaan format waktu tidak menyebabkan pending nyangkut
+      const todayStr = new Date().toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'});
+      pendingLocal = pendingLocal.filter(p => {
+        // Buang jika: sudah ada di Sheets dengan code+outlet yang sama hari ini
+        const confirmedInSheets = fromSheets.some(d =>
           d.code === p.code &&
           d.outlet === p.outlet &&
-          d.date === p.date &&
-          d.time === p.time
-        )
-      );
+          (d.date === p.date || d.date === todayStr)
+        );
+        // Buang juga jika pending sudah lebih dari 5 menit (pasti sudah landed atau gagal)
+        const age = Date.now() - (p.ts || 0);
+        const tooOld = age > 5 * 60 * 1000;
+        return !confirmedInSheets && !tooOld;
+      });
       cachePending();
 
-      // allData = data Sheets + pending yang belum dikonfirmasi (optimistic UI)
+      // allData = 100% dari Sheets + pending yang benar-benar baru (<5 menit, belum ada di Sheets)
       allData = [...fromSheets, ...pendingLocal];
       // ─────────────────────────────────────────────────────────────────
 
@@ -945,7 +953,8 @@ function submitCode() {
     code: v, name: found.name, outlet: selectedOutlet,
     month: getMonthStr(),
     date: now.toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}),
-    time: fmtTime(Date.now())
+    time: fmtTime(Date.now()),
+    ts: Date.now()  // untuk auto-expire pending setelah 5 menit
   };
 
   // Tampilkan optimistis di UI — akan dibuang saat Sheets konfirmasi
@@ -1053,6 +1062,14 @@ function downloadCSV() {
   const blob = new Blob([[hdr,...rows].join('\n')], {type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `KIP_Rekap_${month}.csv`; a.click();
   showToast('CSV berhasil diunduh!');
+}
+
+function clearPendingCache() {
+  pendingLocal = [];
+  cachePending();
+  // Langsung tarik ulang dari Sheets supaya allData bersih
+  fetchCloud(false);
+  showToast('Cache pending dibersihkan — data diambil ulang dari Sheets');
 }
 
 function resetData() {
