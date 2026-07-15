@@ -208,253 +208,267 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
 /* ============================================================
    DESKTOP LAYOUT (≥900px) — sidebar kiri + konten kanan
    ============================================================ */
-@media (min-width: 900px) {
-  html, body {
-    background: var(--surface-1);
+@media (min-width:900px){
+  html,body{ background:var(--surface-1); }
+
+  /* Shell utama: sidebar + area konten */
+  .app{
+    max-width:1200px; min-height:100vh;
+    flex-direction:row; align-items:stretch;
+    border-radius:16px; margin:24px auto;
+    box-shadow:0 8px 48px rgba(0,0,0,0.12);
+    overflow:hidden;
   }
 
-  .app {
-    max-width: 1200px;
-    margin: 40px auto;
-    flex-direction: row;
-    align-items: stretch;
-    border-radius: 16px;
-    box-shadow: 0 8px 48px rgba(0,0,0,0.12);
+  /* ── SIDEBAR ── */
+  .desktop-sidebar{
+    width:220px; flex-shrink:0;
+    background:var(--surface-2);
+    border-right:.5px solid var(--border);
+    display:flex; flex-direction:column;
+  }
+  .header{
+    flex-direction:column; align-items:flex-start;
+    padding:24px 20px 20px; border-bottom:.5px solid var(--border);
+    gap:8px;
+  }
+  .header-brand{ display:flex; align-items:center; gap:12px; }
+  .logo{ width:40px; height:40px; font-size:14px; border-radius:10px; }
+  .header h1{ font-size:14px; }
+  .header p{ font-size:11px; }
+
+  /* Sidebar nav (menggantikan tab-bar horizontal) */
+  .tab-bar{
+    flex-direction:column; padding:12px 10px;
+    border-bottom:none; gap:4px; flex:1;
+  }
+  .tab{
+    justify-content:flex-start; padding:10px 14px;
+    border-radius:var(--radius); border-bottom:none;
+    font-size:13px; gap:10px; text-align:left;
+  }
+  .tab i{ font-size:17px; }
+  .tab.active{
+    background:var(--green-bg); color:var(--green-dark);
+    border-bottom:none;
+  }
+  .tab:hover:not(.active){ background:var(--surface-1); }
+
+  /* Sidebar footer — status sync */
+  .sidebar-footer{
+    padding:14px 16px; border-top:.5px solid var(--border);
+    font-size:11px; color:var(--text-muted);
+  }
+  .sidebar-footer .sync-row{
+    display:flex; align-items:center; gap:6px;
   }
 
-  .desktop-sidebar {
-    width: 260px;
-    background: var(--surface-2);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
+  /* ── AREA KONTEN ── */
+  .desktop-content{
+    flex:1; overflow-y:auto; min-width:0;
+    display:flex; flex-direction:column;
   }
 
-  .header {
-    border-bottom: none;
-    padding: 24px;
-    margin-bottom: 10px;
-  }
+  /* Semua page ditampilkan sebagai grid 2 kolom */
+  .page{ padding:24px; flex:1; }
+  .page.active{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-content:start; }
 
-  .tab-bar {
-    flex-direction: column;
-    padding: 0 16px;
-    border-bottom: none;
-    background: transparent;
-    gap: 8px;
-  }
+  /* Page kasir: kolom kiri = pilih outlet, kolom kanan = input + recent */
+  #page-kasir.active{ grid-template-columns:1fr 1fr; }
+  #page-kasir .card:first-child{ grid-column:1; }
+  #input-section{ grid-column:2; }
+  #input-section .selected-badge{ display:flex; }
 
-  .tab {
-    justify-content: flex-start;
-    padding: 14px 16px;
-    border-radius: 12px;
-    border-bottom: none;
-    font-size: 14px;
-    gap: 12px;
-    transition: all 0.2s;
-  }
+  /* Page grafik: stat-row full width, lalu chart + ranking berdampingan */
+  #page-grafik.active{ grid-template-columns:1fr 1fr; }
+  #page-grafik .stat-row{ grid-column:1/-1; }
+  #page-grafik .card:nth-child(2){ grid-column:1; } /* chart */
+  #page-grafik .card:nth-child(3){ grid-column:2; } /* ranking */
 
-  .tab.active {
-    background: var(--green-bg);
-    color: var(--green-dark);
-  }
+  /* Page rekap: full width */
+  #page-rekap.active{ grid-template-columns:1fr 1fr; }
+  #page-rekap .card:first-child{ grid-column:1; }
+  #page-rekap .card:last-child{ grid-column:2; }
 
-  .tab:hover:not(.active) {
-    background: var(--surface-0);
-  }
+  /* Page pengaturan: talent management + sheets berdampingan */
+  #page-pengaturan.active{ grid-template-columns:1fr 1fr; }
 
-  .desktop-content {
-    flex: 1;
-    background: var(--surface-0);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-  }
+  /* Hapus max-height on list supaya tidak terpotong di desktop */
+  .recent-list{ max-height:none; }
+  .talent-list-wrap{ max-height:none; }
+  #full-log{ max-height:600px; }
 
-  .page {
-    padding: 32px;
-  }
+  /* Outlet grid 1 kolom di sidebar konten agar tidak terlalu lebar */
+  .outlet-grid{ grid-template-columns:1fr; }
 
-  /* Buat konten di dalam halaman menjadi Grid 2 kolom di Desktop */
-  .page.active {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    align-content: start;
-  }
-
-  #page-grafik .stat-row {
-    grid-column: 1 / -1;
-  }
+  /* Sembunyikan elemen yang tidak relevan di desktop */
+  .tab-bar .tab i + *{ display:inline; } /* pastikan label tab muncul */
 }
 
 /* ============================================================
-   MOBILE LAYOUT (<900px)
+   MOBILE — sembunyikan desktop sidebar footer, tampilkan normal
    ============================================================ */
-@media (max-width: 899px) {
-  .app {
-    flex-direction: column;
-  }
-  .desktop-sidebar {
-    display: contents; /* Menghilangkan efek wrapper di HP */
-  }
-  .desktop-content {
-    display: contents; /* Menghilangkan efek wrapper di HP */
-  }
+@media (max-width:899px){
+  .desktop-sidebar{ display:contents; }
+  .desktop-content{ display:contents; }
+  .sidebar-footer{ display:none; }
+  .header{ flex-direction:row; }
+  .header-brand{ display:contents; }
 }
 </style>
-</head>
-<body>
 
 <div class="app">
-  <div class="desktop-sidebar">
-    <div class="header">
-      <div class="logo">KIP</div>
-      <div>
-        <h1>Kopma Influence Partner</h1>
-        <p>Sistem Input Kode Talent</p>
+  <div class="header">
+    <div class="logo">KIP</div>
+    <div>
+      <h1>Kopma Influence Partner</h1>
+      <p>Sistem Input Kode Talent</p>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('kasir',this)"><i class="ti ti-cash-register" aria-hidden="true"></i>Kasir</button>
+    <button class="tab" onclick="switchTab('grafik',this)"><i class="ti ti-chart-bar" aria-hidden="true"></i>Grafik</button>
+    <button class="tab" onclick="switchTab('rekap',this)"><i class="ti ti-table" aria-hidden="true"></i>Rekap</button>
+    <button class="tab" onclick="switchTab('pengaturan',this)"><i class="ti ti-settings" aria-hidden="true"></i>Pengaturan</button>
+  </div>
+
+  <!-- PAGE: KASIR -->
+  <div id="page-kasir" class="page active">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-store" aria-hidden="true"></i>Pilih unit bisnis</div>
+      <div class="outlet-grid">
+        <button class="outlet-btn" onclick="selectOutlet(this,'Minimarket Kopma UNY')">
+          <div class="ob-dot"></div><div class="ob-name">Minimarket Kopma UNY</div>
+        </button>
+        <button class="outlet-btn" onclick="selectOutlet(this,'Ayam Geprek Sarjana')">
+          <div class="ob-dot"></div><div class="ob-name">Ayam Geprek Sarjana</div>
+        </button>
+        <button class="outlet-btn" onclick="selectOutlet(this,'Oleker by Kopma UNY')">
+          <div class="ob-dot"></div><div class="ob-name">Oleker by Kopma UNY</div>
+        </button>
+        <button class="outlet-btn" onclick="selectOutlet(this,'Jasa dan Persewaan Kopma UNY')">
+          <div class="ob-dot"></div><div class="ob-name">Jasa dan Persewaan Kopma UNY</div>
+        </button>
       </div>
     </div>
-    <div class="tab-bar">
-      <button class="tab active" onclick="switchTab('kasir',this)"><i class="ti ti-cash-register" aria-hidden="true"></i>Kasir</button>
-      <button class="tab" onclick="switchTab('grafik',this)"><i class="ti ti-chart-bar" aria-hidden="true"></i>Grafik</button>
-      <button class="tab" onclick="switchTab('rekap',this)"><i class="ti ti-table" aria-hidden="true"></i>Rekap</button>
-      <button class="tab" onclick="switchTab('pengaturan',this)"><i class="ti ti-settings" aria-hidden="true"></i>Pengaturan</button>
+    <div id="input-section" style="display:none">
+      <div class="selected-badge">
+        <i class="ti ti-circle-check" aria-hidden="true"></i>
+        <span id="selected-label">-</span>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-ticket" aria-hidden="true"></i>Input kode referral talent</div>
+        <input class="code-input" id="codeInput" type="text" placeholder="Contoh:NAMA TALENT" maxlength="30"
+          oninput="handleInput(this)" onkeydown="if(event.key==='Enter')submitCode()">
+        <div class="hint" id="hint"></div>
+        <button class="btn-green" id="submitBtn" onclick="submitCode()" disabled>
+          <i class="ti ti-check" aria-hidden="true"></i>Rekam kode
+        </button>
+        <button class="btn-ghost" onclick="clearOutlet()">Ganti unit bisnis</button>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-history" aria-hidden="true"></i>Input terbaru hari ini</div>
+        <div id="recent-list" class="recent-list">
+          <div class="empty"><i class="ti ti-inbox" aria-hidden="true"></i>Belum ada input hari ini</div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="desktop-content">
-    <div id="page-kasir" class="page active">
-      <div class="card">
-        <div class="card-title"><i class="ti ti-store" aria-hidden="true"></i>Pilih unit bisnis</div>
-        <div class="outlet-grid">
-          <button class="outlet-btn" onclick="selectOutlet(this,'Minimarket Kopma UNY')">
-            <div class="ob-dot"></div><div class="ob-name">Minimarket Kopma UNY</div>
-          </button>
-          <button class="outlet-btn" onclick="selectOutlet(this,'Ayam Geprek Sarjana')">
-            <div class="ob-dot"></div><div class="ob-name">Ayam Geprek Sarjana</div>
-          </button>
-          <button class="outlet-btn" onclick="selectOutlet(this,'Oleker by Kopma UNY')">
-            <div class="ob-dot"></div><div class="ob-name">Oleker by Kopma UNY</div>
-          </button>
-          <button class="outlet-btn" onclick="selectOutlet(this,'Jasa dan Persewaan Kopma UNY')">
-            <div class="ob-dot"></div><div class="ob-name">Jasa dan Persewaan Kopma UNY</div>
-          </button>
-        </div>
-      </div>
-      <div id="input-section" style="display:none">
-        <div class="selected-badge">
-          <i class="ti ti-circle-check" aria-hidden="true"></i>
-          <span id="selected-label">-</span>
-        </div>
-        <div class="card">
-          <div class="card-title"><i class="ti ti-ticket" aria-hidden="true"></i>Input kode referral talent</div>
-          <input class="code-input" id="codeInput" type="text" placeholder="Contoh: KIP-ALYA" maxlength="30"
-            oninput="handleInput(this)" onkeydown="if(event.key==='Enter')submitCode()">
-          <div class="hint" id="hint"></div>
-          <button class="btn-green" id="submitBtn" onclick="submitCode()" disabled>
-            <i class="ti ti-check" aria-hidden="true"></i>Rekam kode
-          </button>
-          <button class="btn-ghost" onclick="clearOutlet()">Ganti unit bisnis</button>
-        </div>
-        <div class="card">
-          <div class="card-title"><i class="ti ti-history" aria-hidden="true"></i>Input terbaru hari ini</div>
-          <div id="recent-list" class="recent-list">
-            <div class="empty"><i class="ti ti-inbox" aria-hidden="true"></i>Belum ada input hari ini</div>
-          </div>
-        </div>
-      </div>
+  <!-- PAGE: GRAFIK -->
+  <div id="page-grafik" class="page">
+    <div class="stat-row">
+      <div class="sc"><div class="sc-label">Total kode</div><div class="sc-val green" id="stat-total">0</div></div>
+      <div class="sc"><div class="sc-label">Talent aktif</div><div class="sc-val" id="stat-active">0</div></div>
+      <div class="sc"><div class="sc-label">Bulan ini</div><div class="sc-val" id="stat-month" style="font-size:13px;padding-top:5px">-</div></div>
     </div>
-
-    <div id="page-grafik" class="page">
-      <div class="stat-row">
-        <div class="sc"><div class="sc-label">Total kode</div><div class="sc-val green" id="stat-total">0</div></div>
-        <div class="sc"><div class="sc-label">Talent aktif</div><div class="sc-val" id="stat-active">0</div></div>
-        <div class="sc"><div class="sc-label">Bulan ini</div><div class="sc-val" id="stat-month" style="font-size:13px;padding-top:5px">-</div></div>
-      </div>
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="font-size:14px;font-weight:500;color:var(--text-primary)">Papan kompetisi</div>
-            <div style="display:flex;align-items:center;gap:4px;background:#E1F5EE;border:.5px solid #9FE1CB;border-radius:20px;padding:2px 8px">
-              <div id="live-dot" style="width:6px;height:6px;border-radius:50%;background:#B4B2A9;animation:none" aria-hidden="true"></div>
-              <span style="font-size:11px;font-weight:500;color:#0F6E56">LIVE</span>
-            </div>
-          </div>
-          <div style="text-align:right">
-            <span class="mbadge" id="month-label">-</span>
-            <div id="grafik-sync-time" style="display:none;font-size:10px;color:var(--text-muted);margin-top:2px"></div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:14px;font-weight:500;color:var(--text-primary)">Papan kompetisi</div>
+          <div style="display:flex;align-items:center;gap:4px;background:#E1F5EE;border:.5px solid #9FE1CB;border-radius:20px;padding:2px 8px">
+            <div id="live-dot" style="width:6px;height:6px;border-radius:50%;background:#B4B2A9;animation:none" aria-hidden="true"></div>
+            <span style="font-size:11px;font-weight:500;color:#0F6E56">LIVE</span>
           </div>
         </div>
-        <div class="filter-row">
-          <button class="chip active" onclick="filterOutlet(this,'Semua')">Semua unit</button>
-          <button class="chip" onclick="filterOutlet(this,'Minimarket Kopma UNY')">Minimarket</button>
-          <button class="chip" onclick="filterOutlet(this,'Ayam Geprek Sarjana')">Geprek</button>
-          <button class="chip" onclick="filterOutlet(this,'Oleker by Kopma UNY')">Oleker</button>
-          <button class="chip" onclick="filterOutlet(this,'Jasa dan Persewaan Kopma UNY')">Jasa</button>
+        <div style="text-align:right">
+          <span class="mbadge" id="month-label">-</span>
+          <div id="grafik-sync-time" style="display:none;font-size:10px;color:var(--text-muted);margin-top:2px"></div>
         </div>
-        <div class="chart-wrap"><canvas id="chartCanvas" role="img" aria-label="Grafik kompetisi kode talent KIP"></canvas></div>
       </div>
-      <div class="card">
-        <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:10px">Ranking talent</div>
-        <div id="podium-list"></div>
+      <div class="filter-row">
+        <button class="chip active" onclick="filterOutlet(this,'Semua')">Semua unit</button>
+        <button class="chip" onclick="filterOutlet(this,'Minimarket Kopma UNY')">Minimarket</button>
+        <button class="chip" onclick="filterOutlet(this,'Ayam Geprek Sarjana')">Geprek</button>
+        <button class="chip" onclick="filterOutlet(this,'Oleker by Kopma UNY')">Oleker</button>
+        <button class="chip" onclick="filterOutlet(this,'Jasa dan Persewaan Kopma UNY')">Jasa</button>
       </div>
+      <div class="chart-wrap"><canvas id="chartCanvas" role="img" aria-label="Grafik kompetisi kode talent KIP"></canvas></div>
     </div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:10px">Ranking talent</div>
+      <div id="podium-list"></div>
+    </div>
+  </div>
 
-    <div id="page-rekap" class="page">
-      <div class="card">
-        <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:12px"><i class="ti ti-download" aria-hidden="true" style="margin-right:5px"></i>Export data</div>
-        <div id="rekap-stats" style="margin-bottom:12px"></div>
-        <button class="btn-green" onclick="fetchCloud(true)" style="margin-bottom:8px">
-          <i class="ti ti-refresh" aria-hidden="true"></i>Sinkron sekarang
+  <!-- PAGE: REKAP -->
+  <div id="page-rekap" class="page">
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:12px"><i class="ti ti-download" aria-hidden="true" style="margin-right:5px"></i>Export data</div>
+      <div id="rekap-stats" style="margin-bottom:12px"></div>
+      <button class="btn-green" onclick="fetchCloud(true)" style="margin-bottom:8px">
+        <i class="ti ti-refresh" aria-hidden="true"></i>Sinkron sekarang
+      </button>
+      <button class="btn-ghost" onclick="downloadCSV()"><i class="ti ti-file-spreadsheet" aria-hidden="true" style="margin-right:5px"></i>Unduh CSV</button>
+      <button class="btn-danger" onclick="if(confirm('Ini hanya menghapus data dari layar perangkat ini sementara — data asli tetap ada di Google Sheets dan akan muncul lagi saat sinkron berikutnya. Untuk menghapus permanen, edit langsung di Sheets. Lanjutkan?'))resetData()">Sembunyikan data bulan ini (sementara)</button>
+      <button class="btn-danger" style="margin-top:6px;border-color:#B4B2A9;color:var(--text-secondary)" onclick="clearPendingCache()"><i class="ti ti-eraser" aria-hidden="true" style="margin-right:5px"></i>Bersihkan cache pending lokal</button>
+      <div id="sheets-status" class="gs-status"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:10px">Log seluruh transaksi</div>
+      <div id="full-log" style="max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:5px"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: PENGATURAN -->
+  <div id="page-pengaturan" class="page">
+
+    <!-- TALENT MANAGEMENT CARD -->
+    <div class="card">
+      <div class="talent-mgmt-header">
+        <span class="title"><i class="ti ti-users" aria-hidden="true" style="margin-right:5px;color:var(--green)"></i>Daftar talent aktif</span>
+        <span class="talent-count-badge" id="talent-count-badge">0 talent</span>
+      </div>
+
+      <div class="talent-actions">
+        <button class="btn-sm-green" onclick="openAddModal()">
+          <i class="ti ti-plus" aria-hidden="true"></i>Tambah talent
         </button>
-        <button class="btn-ghost" onclick="downloadCSV()"><i class="ti ti-file-spreadsheet" aria-hidden="true" style="margin-right:5px"></i>Unduh CSV</button>
-        <button class="btn-danger" onclick="if(confirm('Ini hanya menghapus data dari layar perangkat ini sementara — data asli tetap ada di Google Sheets dan akan muncul lagi saat sinkron berikutnya. Untuk menghapus permanen, edit langsung di Sheets. Lanjutkan?'))resetData()">Sembunyikan data bulan ini (sementara)</button>
-        <button class="btn-danger" style="margin-top:6px;border-color:#B4B2A9;color:var(--text-secondary)" onclick="clearPendingCache()"><i class="ti ti-eraser" aria-hidden="true" style="margin-right:5px"></i>Bersihkan cache pending lokal</button>
-        <div id="sheets-status" class="gs-status"></div>
+        <button class="btn-sm-ghost" onclick="openImportModal()" title="Import dari CSV">
+          <i class="ti ti-upload" aria-hidden="true"></i>Import CSV
+        </button>
+        <button class="btn-sm-ghost" onclick="exportTalentCSV()" title="Export ke CSV">
+          <i class="ti ti-download" aria-hidden="true"></i>
+        </button>
       </div>
-      <div class="card">
-        <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:10px">Log seluruh transaksi</div>
-        <div id="full-log" style="max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:5px"></div>
+
+      <div class="search-wrap">
+        <i class="ti ti-search" aria-hidden="true"></i>
+        <input class="talent-search" type="text" placeholder="Cari nama atau kode talent..." oninput="renderTalentList(this.value)" id="talentSearch">
       </div>
+
+      <div class="talent-list-wrap" id="talent-list-main"></div>
     </div>
 
-    <div id="page-pengaturan" class="page">
-      <div class="card">
-        <div class="talent-mgmt-header">
-          <span class="title"><i class="ti ti-users" aria-hidden="true" style="margin-right:5px;color:var(--green)"></i>Daftar talent aktif</span>
-          <span class="talent-count-badge" id="talent-count-badge">0 talent</span>
-        </div>
+    <!-- GOOGLE SHEETS CARD -->
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:4px"><i class="ti ti-brand-google" aria-hidden="true" style="margin-right:5px"></i>Koneksi Google Sheets</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px">Mendukung baca + tulis — semua HP/desktop bisa update real-time lewat Sheets yang sama.</div>
 
-        <div class="talent-actions">
-          <button class="btn-sm-green" onclick="openAddModal()">
-            <i class="ti ti-plus" aria-hidden="true"></i>Tambah talent
-          </button>
-          <button class="btn-sm-ghost" onclick="openImportModal()" title="Import dari CSV">
-            <i class="ti ti-upload" aria-hidden="true"></i>Import CSV
-          </button>
-          <button class="btn-sm-ghost" onclick="exportTalentCSV()" title="Export ke CSV">
-            <i class="ti ti-download" aria-hidden="true"></i>
-          </button>
-        </div>
-
-        <div class="search-wrap">
-          <i class="ti ti-search" aria-hidden="true"></i>
-          <input class="talent-search" type="text" placeholder="Cari nama atau kode talent..." oninput="renderTalentList(this.value)" id="talentSearch">
-        </div>
-
-        <div class="talent-list-wrap" id="talent-list-main"></div>
-      </div>
-
-      <div class="card">
-        <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:4px"><i class="ti ti-brand-google" aria-hidden="true" style="margin-right:5px"></i>Koneksi Google Sheets</div>
-        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px">Mendukung baca + tulis — semua HP/desktop bisa update real-time lewat Sheets yang sama.</div>
-
-        <div class="gs-setup">
-          <p style="font-weight:500;margin-bottom:10px">Kode Apps Script (deploy ulang jika belum):</p>
-          <div class="gs-step"><span>1</span>Buka Apps Script → hapus semua kode lama → tempel kode ini:</div>
-          <div class="code-block"><pre>function doGet(e) {
+      <div class="gs-setup">
+        <p style="font-weight:500;margin-bottom:10px">Kode Apps Script (deploy ulang jika belum):</p>
+        <div class="gs-step"><span>1</span>Buka Apps Script → hapus semua kode lama → tempel kode ini:</div>
+        <div class="code-block"><pre>function doGet(e) {
   var ss = SpreadsheetApp
     .getActiveSpreadsheet();
   var p = e.parameter;
@@ -598,28 +612,28 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
   ]);
   return reply({status:"ok"});
 }</pre></div>
-          <div class="gs-step"><span>2</span>Klik <code>Deploy → Manage deployments</code></div>
-          <div class="gs-step"><span>3</span>Klik ikon pensil → <code>Version: New version</code> → <code>Deploy</code></div>
-          <div class="gs-step"><span>4</span>Pastikan akses diset <code>Anyone</code> → Deploy. URL tetap sama.</div>
-          <div class="gs-step"><span>5</span>Masukkan URL yang sama di <b>semua</b> HP/desktop.</div>
-        </div>
+        <div class="gs-step"><span>2</span>Klik <code>Deploy → Manage deployments</code></div>
+        <div class="gs-step"><span>3</span>Klik ikon pensil → <code>Version: New version</code> → <code>Deploy</code></div>
+        <div class="gs-step"><span>4</span>Pastikan akses diset <code>Anyone</code> → Deploy. URL tetap sama.</div>
+        <div class="gs-step"><span>5</span>Masukkan URL yang sama di <b>semua</b> HP/desktop.</div>
+      </div>
 
-        <div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:6px">URL Web App Google Sheets</div>
-        <input class="url-input" id="gsUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveGsUrl()">
-        <button class="btn-green" onclick="testConnection()" style="margin-top:4px">
-          <i class="ti ti-plug" aria-hidden="true"></i>Test koneksi
-        </button>
-        <div id="url-status" class="gs-status"></div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:10px">URL tersimpan di browser perangkat ini. Masukkan URL yang sama di semua perangkat.</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:.5px solid var(--border)">
-          <div id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#B4B2A9;flex-shrink:0"></div>
-          <div style="font-size:12px;color:var(--text-secondary)" id="sync-status">Belum tersinkron</div>
-        </div>
+      <div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:6px">URL Web App Google Sheets</div>
+      <input class="url-input" id="gsUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveGsUrl()">
+      <button class="btn-green" onclick="testConnection()" style="margin-top:4px">
+        <i class="ti ti-plug" aria-hidden="true"></i>Test koneksi
+      </button>
+      <div id="url-status" class="gs-status"></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:10px">URL tersimpan di browser perangkat ini. Masukkan URL yang sama di semua perangkat.</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:.5px solid var(--border)">
+        <div id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#B4B2A9;flex-shrink:0"></div>
+        <div style="font-size:12px;color:var(--text-secondary)" id="sync-status">Belum tersinkron</div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- ========== MODAL: TAMBAH / EDIT TALENT ========== -->
 <div class="modal-overlay hidden" id="modal-talent">
   <div class="modal">
     <div class="modal-title" id="modal-talent-title">Tambah talent baru</div>
@@ -647,6 +661,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
   </div>
 </div>
 
+<!-- ========== MODAL: KONFIRMASI HAPUS ========== -->
 <div class="modal-overlay hidden" id="modal-delete">
   <div class="modal">
     <div class="del-icon"><i class="ti ti-trash" aria-hidden="true"></i></div>
@@ -659,6 +674,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helveti
   </div>
 </div>
 
+<!-- ========== MODAL: IMPORT CSV ========== -->
 <div class="modal-overlay hidden" id="modal-import">
   <div class="modal">
     <div class="modal-title">Import talent dari CSV</div>
